@@ -47,6 +47,10 @@ const bookSchema = new mongoose.Schema(
       min: [0, 'Discount must be positive'],
       max:[70,'Discount cant be more than 70 ']
     },
+    category: {
+      type: String,
+      required: [true, 'Book category is required'],
+    },
     description: {
       type: String,
       required: [true, 'Book description is required'],
