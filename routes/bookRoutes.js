@@ -1,31 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/uplaod');
 const {
   addBook,
-//   getAllBooks,
   getBookById,
   updateBook,
   deleteBook,
   getAllBooksP
 } = require('../controllers/bookController');
 
-// Add Book
-router.post('/', addBook);
-
-// Get All Books
-// router.get('/', getAllBooks);
-
-// Get Book By ID
+// Add , Get , Update , Delete ==> Book
+router.post('/', upload.single('image') , addBook);
 router.get('/:id', getBookById);
-
-// Update Book By ID
 router.put('/:id', updateBook);
-
-// Delete Book By ID
 router.delete('/:id', deleteBook);
-
-
-// Get All Books pagination handeling
 router.get('/', getAllBooksP);
 
 module.exports = router;
