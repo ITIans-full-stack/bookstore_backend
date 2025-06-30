@@ -3,12 +3,12 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const bookRoutes = require('./routes/bookRoutes');
-// const { notFound, errorHandler } = require('./middleware/errorHandler');
+// const { notFound, errorHandler } = require('./middleware/errorHandler');;
+
 const errorHandler = require('./middleware/errorHandler');
-
-const { notFound, errorHandler } = require('./middleware/errorHandler');
 const orderRoutes = require('./routes/orders');
-
+const authRoutes = require('./routes/authRoutes');
+const cartRoutes = require('./routes/cartRouters');
 
 dotenv.config();
 connectDB();
@@ -23,6 +23,10 @@ app.use('/api/books', bookRoutes);
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/users', authRoutes);
+app.use('/api/cart', cartRoutes);
+
+
 // Error Handling
 // app.use(notFound);
 app.use(errorHandler);
