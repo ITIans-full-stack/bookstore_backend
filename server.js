@@ -1,3 +1,4 @@
+
 const express = require("express");
 const dotenv = require("dotenv");
 const http = require("http");
@@ -13,9 +14,16 @@ const cartRoutes = require("./routes/cartRouters");
 const errorHandler = require("./middleware/errorHandler");
 
 
+
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 // const { notFound, errorHandler } = require('./middleware/errorHandler');;
+
+const cors = require('cors');
+const errorHandler = require('./middleware/errorHandler');
+const orderRoutes = require('./routes/orders');
+const authRoutes = require('./routes/authRoutes');
+const cartRoutes = require('./routes/cartRouters');
 const paymentRoutes = require('./routes/payment');
 
 
