@@ -41,16 +41,28 @@ const bookSchema = new mongoose.Schema(
       required: [true, 'Price is required'],
       min: [0, 'Price must be positive'],
     },
+    discount: {
+      type: Number,
+      default:0,
+      min: [0, 'Discount must be positive'],
+      max:[70,'Discount cant be more than 70 ']
+    },
+    category: {
+      type: String,
+      required: [true, 'Book category is required'],
+    },
     description: {
       type: String,
+      required: [true, 'Book description is required'],
     },
     stock: {
       type: Number,
-      default: 0,
+      required: [true, 'Book stock is required'],
       min: [0, 'Stock cannot be negative'],
     },
     image: {
       type: String, 
+      required: [true, 'Book image is required'],
     },
     reviews: [reviewSchema],
   },

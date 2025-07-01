@@ -1,17 +1,33 @@
 const Book = require("../models/book");
-const asyncHandler = require("express-async-handler");
 const redisClient = require("../config/redisClient");
-
+const asyncHandler = require("express-async-handler");
+const { validateBook } = require("../validation/bookValidation");
+const fs = require("fs");
 // Add a new book  POST /api/books
 const addBook = async (req, res) => {
   try {
-    const { title, author, price, description, stock, image } = req.body;
-    if (!title || !author || !price) {
-      res.status(400);
-      throw new Error("All fields are required");
+    // const image = req.file ? req.file.path : null;
+    let image = null;
+    if (req.file) {
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      image = `${baseUrl}/${req.file.path.replace(/\\/g, "/")}`;
     }
+    const bookData = {
+      ...req.body,
+      image,
+    };
+    // Joi validation
+    const { error } = validateBook(bookData);
+    if (error) {
+      if (req.file && req.file.path) {
+        fs.unlinkSync(req.file.path);
+      }
 
-    const book = new Book({ title, author, price, description, stock, image });
+      return res.status(400).json({
+        errors: error.details.map((d) => d.message),
+      });
+    }
+    const book = new Book(bookData);
     const createdBook = await book.save();
 
     res.status(201).json(createdBook);
@@ -19,17 +35,7 @@ const addBook = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Get all books  GET /api/books
-// const getAllBooks = async (req, res) => {
-//   try {
-//     const books = await Book.find();
-//     res.json(books);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
+//================================================================================
 // Get book by ID  GET /api/books/:id
 const getBookById = async (req, res) => {
   try {
@@ -44,6 +50,7 @@ const getBookById = async (req, res) => {
   }
 };
 
+//================================================================================
 // Update book by id   PUT /api/books/:id
 const updateBook = asyncHandler(async (req, res) => {
   const book = await Book.findById(req.params.id);
@@ -69,6 +76,7 @@ const updateBook = asyncHandler(async (req, res) => {
   });
 });
 
+//================================================================================
 // Delete book by id   DELETE /api/books/:id
 const deleteBook = asyncHandler(async (req, res) => {
   const book = await Book.findById(req.params.id);
@@ -84,6 +92,8 @@ const deleteBook = asyncHandler(async (req, res) => {
     message: "Book deleted successfully",
   });
 });
+
+//================================================================================
 
 //handel pagination
 
@@ -114,22 +124,13 @@ const getAllBooksP = asyncHandler(async (req, res) => {
     results: books.length,
     data: books,
   };
-  // res.status(200).json({
-  //   success: true,
-  //   message: "Books fetched with pagination",
-  //   page,
-  //   totalBooks,
-  //   totalPages: Math.ceil(totalBooks / limit),
-  //   results: books.length,
-  //   data: books,
-  // });
+
   await redisClient.setEx(redisKey, 300, JSON.stringify(result));
   res.status(200).json(result);
 });
 
 module.exports = {
   addBook,
-  //   getAllBooks,
   getBookById,
   updateBook,
   deleteBook,
