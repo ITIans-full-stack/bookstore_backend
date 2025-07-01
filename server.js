@@ -12,10 +12,18 @@ const authRoutes = require("./routes/authRoutes");
 const cartRoutes = require("./routes/cartRouters");
 const errorHandler = require("./middleware/errorHandler");
 
+
+const connectDB = require('./config/db');
+const userRoutes = require('./routes/userRoutes');
+// const { notFound, errorHandler } = require('./middleware/errorHandler');;
+const paymentRoutes = require('./routes/payment');
+
+
 dotenv.config();
 connectDB();
 
 const app = express();
+app.use(cors()); 
 app.use(express.json());
 app.use(cors());
 
@@ -29,7 +37,18 @@ app.use("/api/users", authRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/auth", require("./routes/authRoutes"));
 
+
 // Error Handler Middleware
+
+// Routes
+app.use('/api/users', userRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/users', authRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/payment', paymentRoutes);
+
+// Error Handling
+// app.use(notFound);
 app.use(errorHandler);
 
 // Server + Socket.io

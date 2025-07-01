@@ -15,7 +15,7 @@ const getCart = async (req, res) => {
 //  2. add to cart
 const addToCart = async (req, res) => {
   try {
-    const items = Array.isArray(req.body) ? req.body : [req.body]; // يدعم الاتنين
+    const items = Array.isArray(req.body) ? req.body : [req.body];
 
     let cart = await Cart.findOne({ user: req.user.id });
 
