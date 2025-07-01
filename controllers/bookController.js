@@ -22,7 +22,6 @@ const addBook = async (req, res) => {
         fs.unlinkSync(req.file.path);
       }
 
-
       return res.status(400).json({
         errors: error.details.map((d) => d.message),
       });
@@ -43,10 +42,10 @@ const getBookById = async (req, res) => {
     if (book) {
       res.json(book);
     } else {
-      res.status(404).json({ message: 'Book not found' });
+      res.status(404).json({ message: "Book not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Invalid Book ID' });
+    res.status(500).json({ message: "Invalid Book ID" });
   }
 };
 
@@ -56,18 +55,22 @@ const updateBook = asyncHandler(async (req, res) => {
   const book = await Book.findById(req.params.id);
   if (!book) {
     res.status(404);
-    throw new Error('Book not found');
+    throw new Error("Book not found");
   }
 
   const updatedFields = req.body;
-  const updatedBook = await Book.findByIdAndUpdate(req.params.id, updatedFields, {
-    new: true,
-    runValidators: true,
-  });
+  const updatedBook = await Book.findByIdAndUpdate(
+    req.params.id,
+    updatedFields,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
 
   res.status(200).json({
     success: true,
-    message: 'Book updated successfully',
+    message: "Book updated successfully",
     data: updatedBook,
   });
 });
@@ -78,51 +81,57 @@ const deleteBook = asyncHandler(async (req, res) => {
   const book = await Book.findById(req.params.id);
   if (!book) {
     res.status(404);
-    throw new Error('Book not found');
+    throw new Error("Book not found");
   }
 
   await book.deleteOne();
 
   res.status(200).json({
     success: true,
-    message: 'Book deleted successfully',
+    message: "Book deleted successfully",
   });
 });
 
-
 //================================================================================
+
 //handel pagination
 
 const getAllBooksP = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const keyword = req.query.keyword
-    ? { title: { $regex: req.query.keyword, $options: 'i' } }
+    ? { title: { $regex: req.query.keyword, $options: "i" } }
     : {};
-    
-
+  const keywordValue = req.query.keyword || "";
+  const redisKey = `books:page=${page}:limit=${limit}:keyword=${keywordValue}`;
+  const cachedData = await redisClient.get(redisKey);
+  if (cachedData) {
+    console.log("Served from Redis cache");
+    return res.status(200).json(JSON.parse(cachedData));
+  }
   const totalBooks = await Book.countDocuments({ ...keyword });
   const books = await Book.find({ ...keyword })
     .skip((page - 1) * limit)
     .limit(limit);
 
-  res.status(200).json({
+  const result = {
     success: true,
-    message: 'Books fetched with pagination',
+    message: "Books fetched with pagination",
     page,
     totalBooks,
     totalPages: Math.ceil(totalBooks / limit),
     results: books.length,
     data: books,
-  });
+  };
+  
+  await redisClient.setEx(redisKey, 300, JSON.stringify(result));
+  res.status(200).json(result);
 });
-
 
 module.exports = {
   addBook,
   getBookById,
   updateBook,
   deleteBook,
-  getAllBooksP
-
+  getAllBooksP,
 };
