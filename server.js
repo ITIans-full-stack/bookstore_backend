@@ -20,15 +20,15 @@ const errorHandler = require("./middleware/errorHandler");
 
 
 
+
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
-// const { notFound, errorHandler } = require('./middleware/errorHandler');;
 
-const cors = require('cors');
-const errorHandler = require('./middleware/errorHandler');
-const orderRoutes = require('./routes/orders');
-const authRoutes = require('./routes/authRoutes');
-const cartRoutes = require('./routes/cartRouters');
+// const { notFound, errorHandler } = require('./middleware/errorHandler');;
+// const errorHandler = require('./middleware/errorHandler');
+// const orderRoutes = require('./routes/orders');
+// const authRoutes = require('./routes/authRoutes');
+// const cartRoutes = require('./routes/cartRouters');
 const paymentRoutes = require('./routes/payment');
 
 
@@ -70,10 +70,7 @@ app.use('/api/auth', authRoutes);
 // Error Handler Middleware
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/users', authRoutes);
-app.use('/api/cart', cartRoutes);
+// app.use('/api/users', userRoutes);
 app.use('/api/payment', paymentRoutes);
 
 // Error Handling
