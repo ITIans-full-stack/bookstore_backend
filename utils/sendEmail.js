@@ -65,6 +65,16 @@ const sendEmail = async (to, subject, text, html = null) => {
     },
   });
 
+//maybe make an issue but this part is needed for sign up (helmy)
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    text
+  });
+};
+
+//kareem edition
   const mailOptions = {
     from: `"Online Bookstore" <${process.env.EMAIL_USER}>`,
     to,
