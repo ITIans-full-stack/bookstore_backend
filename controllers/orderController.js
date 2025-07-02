@@ -2,6 +2,8 @@ const Cart = require("../models/cart");
 const mongoose = require("mongoose");
 const Order = require("../models/order");
 const Book = require("../models/book");
+const sendEmail = require("../utils/sendEmail");
+const User = require("../models/User");
 
 const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
@@ -40,7 +42,26 @@ const createOrder = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
-    
+    const user = await User.findById(userId);
+    const bookListText = books
+      .map((b) => `- ${b.quantity} x ${b.book}`)
+      .join("\n");
+    const bookListHTML = books
+      .map((b) => `<li>${b.quantity} x ${b.book}</li>`)
+      .join("");
+
+    const emailText = `Thank you for your order!\n\nOrder ID: ${
+      newOrder._id
+    }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}`;
+
+    const emailHTML = `
+            <h2>Thank you for your order!</h2>
+            <p><strong>Order ID:</strong> ${newOrder._id}</p>
+            <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
+            <p><strong>Books:</strong></p>
+            <ul>${bookListHTML}</ul>
+          `;
+    await sendEmail(user.email, "Order Confirmation", emailText, emailHTML);
     const io = req.app.get("io");
     io.emit("orderCreated", {
       orderId: newOrder._id,
@@ -178,6 +199,30 @@ const createOrderFromCart = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+
+    const user = await User.findById(userId);
+
+    const bookListText = books
+      .map((b) => `- ${b.quantity} x ${b.book}`)
+      .join("\n");
+
+    const bookListHTML = books
+      .map((b) => `<li>${b.quantity} x ${b.book}</li>`)
+      .join("");
+
+    const emailText = `Thank you for your order!\n\nOrder ID: ${
+      newOrder._id
+    }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}`;
+
+    const emailHTML = `
+          <h2>Thank you for your order!</h2>
+          <p><strong>Order ID:</strong> ${newOrder._id}</p>
+          <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
+          <p><strong>Books:</strong></p>
+          <ul>${bookListHTML}</ul>
+        `;
+
+    await sendEmail(user.email, "Order Confirmation", emailText, emailHTML);
 
     res
       .status(201)
