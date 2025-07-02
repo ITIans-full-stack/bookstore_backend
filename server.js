@@ -14,6 +14,7 @@ const bookRoutes = require("./routes/bookRoutes");
 const orderRoutes = require("./routes/orders");
 const authRoutes = require("./routes/authRoutes");
 const cartRoutes = require("./routes/cartRouters");
+const reviewRoutes = require("./routes/reviewRoutes");
 const errorHandler = require("./middleware/errorHandler");
 connectDB();
 
@@ -35,6 +36,9 @@ app.use(express.json());
 app.use(passport.initialize());
 require('./config/passport');
 
+app.get('/test-review', (req, res) => {
+  res.send('Review Test Route Works!');
+});
 
 
 // Routes
@@ -44,6 +48,7 @@ app.use("/api/users", authRoutes);
 app.use("/api/cart", cartRoutes);
 //app.use("/api/auth", require("./routes/authRoutes"));
 app.use('/api/auth', authRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 
 // Error Handler Middleware
