@@ -1,5 +1,6 @@
 const express = require("express");
-const dotenv = require("dotenv");
+// const dotenv = require("dotenv");
+require('dotenv').config();
 const http = require("http");
 const { Server } = require("socket.io");
 const connectDB = require("./config/db");
@@ -14,8 +15,6 @@ const orderRoutes = require("./routes/orders");
 const authRoutes = require("./routes/authRoutes");
 const cartRoutes = require("./routes/cartRouters");
 const errorHandler = require("./middleware/errorHandler");
-
-dotenv.config();
 connectDB();
 
 
