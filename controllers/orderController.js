@@ -223,6 +223,13 @@ const createOrderFromCart = async (req, res) => {
         `;
 
     await sendEmail(user.email, "Order Confirmation", emailText, emailHTML);
+    const io = req.app.get("io");
+    io.emit("orderCreated", {
+      orderId: newOrder._id,
+      user: userId,
+      totalPrice,
+      books,
+    });
 
     res
       .status(201)
