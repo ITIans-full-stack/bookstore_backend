@@ -1,3 +1,4 @@
+//==============================
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
@@ -17,7 +18,9 @@ const authorizeRoles = (...roles) => (req, res, next) => {
   next();
 };
 
-// router.post('/books', authenticateToken, authorizeRoles('admin'), addBook);
+
+
+
 
 
 module.exports = { authenticateToken, authorizeRoles };
