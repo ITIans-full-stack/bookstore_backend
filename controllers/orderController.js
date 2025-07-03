@@ -1,3 +1,8 @@
+const getUserId = (req) => {
+  return req.user?.id || '686582df5089128001ab4fc8' ; // لو فيه user استخدمه، لو لأ استخدم session
+};
+// ########################
+
 const Cart = require("../models/cart");
 const mongoose = require("mongoose");
 const Order = require("../models/order");
@@ -11,8 +16,7 @@ const createOrder = async (req, res) => {
 
   try {
     const { books } = req.body;
-    const userId = req.user.id;
-
+    const userId = getUserId(req);
     let totalPrice = 0;
 
     for (let item of books) {
@@ -24,7 +28,7 @@ const createOrder = async (req, res) => {
         throw new Error(`Not enough stock for book: ${book.title}`);
       }
 
-      // stock
+//stock
       book.stock -= item.quantity;
       await book.save({ session });
 
@@ -41,46 +45,61 @@ const createOrder = async (req, res) => {
     await newOrder.save({ session });
 
     await session.commitTransaction();
-    session.endSession();
-    const user = await User.findById(userId);
-    const bookListText = books
-      .map((b) => `- ${b.quantity} x ${b.book}`)
-      .join("\n");
-    const bookListHTML = books
-      .map((b) => `<li>${b.quantity} x ${b.book}</li>`)
-      .join("");
+    await session.endSession();
 
-    const emailText = `Thank you for your order!\n\nOrder ID: ${
-      newOrder._id
-    }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}`;
+    try {
+      const user = await User.findById(userId);
+      const bookListText = books
+        .map((b) => `- ${b.quantity} x ${b.book}`)
+        .join("\n");
+      const bookListHTML = books
+        .map((b) => `<li>${b.quantity} x ${b.book}</li>`)
+        .join("");
 
-    const emailHTML = `
-            <h2>Thank you for your order!</h2>
-            <p><strong>Order ID:</strong> ${newOrder._id}</p>
-            <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
-            <p><strong>Books:</strong></p>
-            <ul>${bookListHTML}</ul>
-          `;
-    await sendEmail(user.email, "Order Confirmation", emailText, emailHTML);
-    const io = req.app.get("io");
-    io.emit("orderCreated", {
-      orderId: newOrder._id,
-      user: userId,
-      totalPrice,
-      books,
-    });
+      const emailText = `Thank you for your order!\n\nOrder ID: ${
+        newOrder._id
+      }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}`;
 
-    res.status(201).json(newOrder);
+      const emailHTML = `
+        <h2>Thank you for your order!</h2>
+        <p><strong>Order ID:</strong> ${newOrder._id}</p>
+        <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
+        <p><strong>Books:</strong></p>
+        <ul>${bookListHTML}</ul>
+      `;
+
+      await sendEmail(user.email, "Order Confirmation", emailText, emailHTML);
+
+      const io = req.app.get("io");
+      io.emit("orderCreated", {
+        orderId: newOrder._id,
+        user: userId,
+        totalPrice,
+        books,
+      });
+
+      res.status(201).json(newOrder);
+    } catch (emailError) {
+      res.status(201).json({
+        message: "Order created, but failed to send email or notification",
+        order: newOrder,
+        error: emailError.message,
+      });
+    }
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    await session.endSession();
     res.status(400).json({ message: error.message });
   }
 };
 // order view
 const getMyOrders = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // const userId = req.user.id;###
+    const userId = getUserId(req);
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -156,7 +175,8 @@ const createOrderFromCart = async (req, res) => {
   session.startTransaction();
 
   try {
-    const userId = req.user.id;
+    // const userId = req.user.id;####
+const userId = getUserId(req);
 
     const cart = await Cart.findOne({ user: userId })
       .populate("items.book")

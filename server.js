@@ -1,7 +1,8 @@
 
 const express = require("express");
-// const dotenv = require("dotenv");
-require("dotenv").config();
+
+const dotenv = require("dotenv");
+require('dotenv').config();
 const http = require("http");
 const { Server } = require("socket.io");
 const connectDB = require("./config/db");
@@ -21,8 +22,8 @@ const errorHandler = require("./middleware/errorHandler");
 
 
 
-const connectDB = require('./config/db');
-const userRoutes = require('./routes/userRoutes');
+// const connectDB = require('./config/db');
+// const userRoutes = require('./routes/userRoutes');
 
 // const { notFound, errorHandler } = require('./middleware/errorHandler');;
 // const errorHandler = require('./middleware/errorHandler');
