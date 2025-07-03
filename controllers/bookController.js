@@ -29,7 +29,10 @@ const addBook = async (req, res) => {
     }
     const book = new Book(bookData);
     const createdBook = await book.save();
-
+    const keys = await redisClient.keys("books:page=*");
+    if (keys.length > 0) {
+      await redisClient.del(keys);
+    }
     res.status(201).json(createdBook);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -69,6 +72,10 @@ const updateBook = asyncHandler(async (req, res) => {
     }
   );
 
+  const keys = await redisClient.keys("books:page=*");
+  if (keys.length > 0) {
+    await redisClient.del(keys);
+  }
   res.status(200).json({
     success: true,
     message: "Book updated successfully",
@@ -86,6 +93,11 @@ const deleteBook = asyncHandler(async (req, res) => {
   }
 
   await book.deleteOne();
+
+  const keys = await redisClient.keys("books:page=*");
+  if (keys.length > 0) {
+    await redisClient.del(keys);
+  }
 
   res.status(200).json({
     success: true,
