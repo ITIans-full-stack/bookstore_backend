@@ -110,19 +110,21 @@ const deleteBook = asyncHandler(async (req, res) => {
 //handel pagination
 
 const getAllBooksP = asyncHandler(async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+ 
   const keyword = req.query.keyword
     ? { title: { $regex: req.query.keyword, $options: "i" } }
     : {};
   const keywordValue = req.query.keyword || "";
+    const totalBooks = await Book.countDocuments({ ...keyword });
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || totalBooks;
   const redisKey = `books:page=${page}:limit=${limit}:keyword=${keywordValue}`;
   const cachedData = await redisClient.get(redisKey);
   if (cachedData) {
     console.log("Served from Redis cache");
     return res.status(200).json(JSON.parse(cachedData));
   }
-  const totalBooks = await Book.countDocuments({ ...keyword });
   const books = await Book.find({ ...keyword })
     .skip((page - 1) * limit)
     .limit(limit);
