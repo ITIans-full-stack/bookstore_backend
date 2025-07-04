@@ -141,6 +141,24 @@ const getAllBooksP = asyncHandler(async (req, res) => {
   await redisClient.setEx(redisKey, 300, JSON.stringify(result));
   res.status(200).json(result);
 });
+//-----------------------------------
+//get related books
+const getRelatedBooks = asyncHandler(async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+
+    const relatedBooks = await Book.find({
+      _id: { $ne: book._id },
+      category: book.category
+    }).limit(6);
+
+    res.json(relatedBooks);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 module.exports = {
   addBook,
@@ -148,4 +166,5 @@ module.exports = {
   updateBook,
   deleteBook,
   getAllBooksP,
+  getRelatedBooks
 };
