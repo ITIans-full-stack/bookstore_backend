@@ -1,5 +1,6 @@
 const express = require("express");
-// const dotenv = require("dotenv");
+const dotenv = require("dotenv");
+
 require('dotenv').config();
 const http = require("http");
 const { Server } = require("socket.io");
@@ -16,6 +17,23 @@ const authRoutes = require("./routes/authRoutes");
 const cartRoutes = require("./routes/cartRouters");
 const reviewRoutes = require("./routes/reviewRoutes");
 const errorHandler = require("./middleware/errorHandler");
+
+
+
+const paymentRoutes = require("./routes/payment");
+const stripeWebhook = require("./routes/stripeWebhook");
+
+// const connectDB = require('./config/db');
+// const userRoutes = require('./routes/userRoutes');
+
+// const { notFound, errorHandler } = require('./middleware/errorHandler');;
+// const errorHandler = require('./middleware/errorHandler');
+// const orderRoutes = require('./routes/orders');
+// const authRoutes = require('./routes/authRoutes');
+// const cartRoutes = require('./routes/cartRouters');
+
+
+dotenv.config();
 connectDB();
 
 
@@ -23,6 +41,10 @@ connectDB();
 
 // ====== INIT APP FIRST ======
 const app = express();
+app.use("/api/webhook", express.raw({ type: "application/json" }), stripeWebhook);
+
+app.use(cors()); 
+// app.use("/api/webhook", stripeWebhook);
 
 app.use(express.json());
 app.use(cors());
@@ -42,6 +64,8 @@ app.get('/test-review', (req, res) => {
 
 
 // Routes
+app.use('/api/payment', paymentRoutes);
+
 app.use("/api/books", bookRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", authRoutes);
@@ -49,9 +73,19 @@ app.use("/api/cart", cartRoutes);
 //app.use("/api/auth", require("./routes/authRoutes"));
 app.use('/api/auth', authRoutes);
 app.use("/api/reviews", reviewRoutes);
+// app.use("/api/paypal", paymentRoutes);
+app.use('/api/payment', paymentRoutes);
+
 
 
 // Error Handler Middleware
+
+// Routes
+// app.use('/api/users', userRoutes);
+// app.use('/api/payment', paymentRoutes);
+
+// Error Handling
+// app.use(notFound);
 app.use(errorHandler);
 
 // Server + Socket.io

@@ -14,7 +14,7 @@ const {
 router.post('/', upload.single('image') , addBook);
 router.get('/:id/related', getRelatedBooks);
 router.get('/:id', getBookById);
-router.put('/:id', updateBook);
+router.put('/:id',upload.single('image') ,updateBook);
 router.delete('/:id', deleteBook);
 router.get('/', getAllBooksP);
 
