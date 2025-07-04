@@ -1,53 +1,73 @@
 const express = require('express');
-const router = express.Router();
-const paypal = require('@paypal/checkout-server-sdk');
+const Stripe = require('stripe');
+const bodyParser = require('body-parser');
+const { payOrder } = require('../controllers/orderController'); 
 require('dotenv').config();
 
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const router = express.Router();
 
-const Environment = paypal.core.SandboxEnvironment;
-const paypalClient = new paypal.core.PayPalHttpClient(
-  new Environment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
-);
-
-router.post('/create-order', async (req, res) => {
-  const { total } = req.body;
-
-  const request = new paypal.orders.OrdersCreateRequest();
-  request.prefer('return=representation');
-  request.requestBody({
-    intent: 'CAPTURE',
-    purchase_units: [{
-      amount: {
-        currency_code: 'USD',
-        value: total.toString()
-      }
-    }]
-  });
+router.post('/create-checkout-session', async (req, res) => {
+  const { items, orderId, userId } = req.body;
 
   try {
-    const order = await paypalClient.execute(request);
-      const approveLink = order.result.links.find(link => link.rel === 'approve');
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: items.map(item => ({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: item.price * 100,
+        },
+        quantity: item.quantity,
+      })),
+    success_url: `http://localhost:4200/payment-result?status=success&orderId=${orderId}`,
+    cancel_url: `http://localhost:4200/payment-result?status=cancel&orderId=${orderId}`,
 
-     res.json({ id: order.result.id, approveUrl: approveLink.href });
+
+      
+      metadata: {
+        orderId,
+        userId
+      }
+    });
+
+    res.json({ url: session.url });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to create PayPal order' });
+    res.status(500).json({ error: err.message });
   }
 });
-// Capture Payment
-router.post('/capture-order/:orderId', async (req, res) => {
-  const orderId = req.params.orderId;
 
-  const request = new paypal.orders.OrdersCaptureRequest(orderId);
-  request.requestBody({});
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
 
+  let event;
   try {
-    const capture = await paypalClient.execute(request);
-    res.json({ message: 'Payment captured successfully', capture });
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to capture PayPal payment' });
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+
+    const orderId = session.metadata.orderId;
+    const userId = session.metadata.userId;
+
+    req.params = { id: orderId };
+    req.user = { id: userId };
+
+    try {
+      await payOrder(req, res);
+    } catch (error) {
+      console.error("payOrder failed", error.message);
+    }
+  }
+
+  res.status(200).json({ received: true });
 });
 
 module.exports = router;
