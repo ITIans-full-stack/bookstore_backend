@@ -62,7 +62,28 @@ const updateBook = asyncHandler(async (req, res) => {
     throw new Error("Book not found");
   }
 
-  const updatedFields = req.body;
+  // Handle new image upload
+  let image = book.image;
+  if (req.file) {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    image = `${baseUrl}/${req.file.path.replace(/\\/g, "/")}`;
+
+    
+    const oldPath = book.image.replace(baseUrl + "/", "");
+    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+  }
+
+  const updatedFields = {
+    ...req.body,
+    image, 
+  };
+
+  
+  const { error } = validateBook(updatedFields);
+  if (error) {
+    return res.status(400).json({ errors: error.details.map(d => d.message) });
+  }
+
   const updatedBook = await Book.findByIdAndUpdate(
     req.params.id,
     updatedFields,
@@ -71,15 +92,18 @@ const updateBook = asyncHandler(async (req, res) => {
       runValidators: true,
     }
   );
+
   const bookKey = `book:${req.params.id}`;
   await redisClient.setEx(bookKey, 300, JSON.stringify(updatedBook));
   await clearBooksPaginationCache();
+
   res.status(200).json({
     success: true,
     message: "Book updated successfully",
     data: updatedBook,
   });
 });
+
 
 //================================================================================
 // Delete book by id   DELETE /api/books/:id
