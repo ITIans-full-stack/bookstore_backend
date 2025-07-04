@@ -114,8 +114,7 @@ const deleteBook = asyncHandler(async (req, res) => {
     throw new Error("Book not found");
   }
 
-  await book.deleteOne();
-  await redisClient.del(`book:${req.params.id}`);
+  await Book.findByIdAndDelete(req.params.id);
   await clearBooksPaginationCache();
   await redisClient.del(`book:${req.params.id}`);
   res.status(200).json({
