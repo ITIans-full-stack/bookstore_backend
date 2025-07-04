@@ -4,7 +4,8 @@ const {
   addReview,
   updateReview,
   deleteReview,
-  getReviewsForBook
+  getReviewsForBook,
+  canUserReview
 } = require("../controllers/reviewController");
 const {authenticateToken} = require("../middleware/auth"); 
 
@@ -19,5 +20,8 @@ router.delete("/:reviewId", authenticateToken, deleteReview);
 
 // Get all reviews for a book
 router.get("/book/:bookId", getReviewsForBook);
+
+router.get('/can-review/:bookId', authenticateToken, canUserReview);
+
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const Book = require("../models/book");
 const redisClient = require("../config/redisClient");
+const { clearBooksPaginationCache } = require("../utils/cache");
 const asyncHandler = require("express-async-handler");
 const { validateBook } = require("../validation/bookValidation");
 const fs = require("fs");
@@ -28,11 +29,10 @@ const addBook = async (req, res) => {
       });
     }
     const book = new Book(bookData);
+
     const createdBook = await book.save();
-    const keys = await redisClient.keys("books:page=*");
-    if (keys.length > 0) {
-      await redisClient.del(keys);
-    }
+    await clearBooksPaginationCache();
+
     res.status(201).json(createdBook);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -71,11 +71,9 @@ const updateBook = asyncHandler(async (req, res) => {
       runValidators: true,
     }
   );
-
-  const keys = await redisClient.keys("books:page=*");
-  if (keys.length > 0) {
-    await redisClient.del(keys);
-  }
+  const bookKey = `book:${req.params.id}`;
+  await redisClient.setEx(bookKey, 300, JSON.stringify(updatedBook));
+  await clearBooksPaginationCache();
   res.status(200).json({
     success: true,
     message: "Book updated successfully",
@@ -93,12 +91,9 @@ const deleteBook = asyncHandler(async (req, res) => {
   }
 
   await book.deleteOne();
-
-  const keys = await redisClient.keys("books:page=*");
-  if (keys.length > 0) {
-    await redisClient.del(keys);
-  }
-
+  await redisClient.del(`book:${req.params.id}`);
+  await clearBooksPaginationCache();
+  await redisClient.del(`book:${req.params.id}`);
   res.status(200).json({
     success: true,
     message: "Book deleted successfully",
@@ -123,7 +118,10 @@ const getAllBooksP = asyncHandler(async (req, res) => {
   const cachedData = await redisClient.get(redisKey);
   if (cachedData) {
     console.log("Served from Redis cache");
-    return res.status(200).json(JSON.parse(cachedData));
+    return res.status(200).json({
+      ...JSON.parse(cachedData),
+      cache: true,
+    });
   }
   const books = await Book.find({ ...keyword })
     .skip((page - 1) * limit)
@@ -137,6 +135,7 @@ const getAllBooksP = asyncHandler(async (req, res) => {
     totalPages: Math.ceil(totalBooks / limit),
     results: books.length,
     data: books,
+    cache:false
   };
 
   await redisClient.setEx(redisKey, 300, JSON.stringify(result));
