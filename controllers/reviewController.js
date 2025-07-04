@@ -1,6 +1,9 @@
+const mongoose = require("mongoose");
+const asyncHandler = require("express-async-handler");
 const Review = require("../models/review");
 const Book = require("../models/book");
-const asyncHandler = require("express-async-handler");
+const Order = require("../models/order");
+
 
 // @desc    Add review to a book
 // @route   POST /api/reviews/:bookId
@@ -14,7 +17,6 @@ const addReview = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Book not found");
   }
-
   const review = new Review({
     rating,
     comment,
@@ -23,12 +25,17 @@ const addReview = asyncHandler(async (req, res) => {
   });
 
   const createdReview = await review.save();
+  const avg = await Review.aggregate([
+    { $match: { book: new mongoose.Types.ObjectId(bookId) } },
+    { $group: { _id: "$book", avgRating: { $avg: "$rating" } } }
+  ]);
+
+  book.averageRating = avg[0]?.avgRating || 0;
+  await book.save();
   res.status(201).json(createdReview);
 });
 
 // @desc    Update review
-// @route   PUT /api/reviews/:reviewId
-// @access  Private
 const updateReview = asyncHandler(async (req, res) => {
   const review = await Review.findById(req.params.reviewId);
   if (!review) {
@@ -46,11 +53,10 @@ const updateReview = asyncHandler(async (req, res) => {
 
   const updatedReview = await review.save();
   res.json(updatedReview);
+
 });
 
 // @desc    Delete review
-// @route   DELETE /api/reviews/:reviewId
-// @access  Private
 const deleteReview = asyncHandler(async (req, res) => {
   const review = await Review.findById(req.params.reviewId);
   if (!review) {
@@ -65,11 +71,10 @@ const deleteReview = asyncHandler(async (req, res) => {
 
   await review.deleteOne();
   res.json({ message: "Review deleted" });
+
 });
 
 // @desc    Get all reviews for a book
-// @route   GET /api/reviews/book/:bookId
-// @access  Public
 const getReviewsForBook = asyncHandler(async (req, res) => {
   const reviews = await Review.find({ book: req.params.bookId }).populate(
     "user",
@@ -77,10 +82,27 @@ const getReviewsForBook = asyncHandler(async (req, res) => {
   );
   res.json(reviews);
 });
+const canUserReview = asyncHandler(async (req, res) => {
+  const { bookId } = req.params;
+
+  const order = await Order.findOne({
+    user: req.user.id,
+    "books.book": bookId,
+    status: "delivered"
+  });
+
+  if (order) {
+    return res.json({ canReview: true });
+  } else {
+    return res.status(403).json({ canReview: false });
+  }
+});
+
 
 module.exports = {
   addReview,
   updateReview,
   deleteReview,
-  getReviewsForBook
+  getReviewsForBook,
+  canUserReview
 };

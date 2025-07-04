@@ -64,7 +64,10 @@ const bookSchema = new mongoose.Schema(
       type: String, 
       required: [true, 'Book image is required'],
     },
-    reviews: [reviewSchema],
+     averageRating: {
+      type: Number,
+      default: 0
+    }
   },
   {
     timestamps: true,

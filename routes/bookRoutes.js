@@ -12,7 +12,7 @@ const {
 // Add , Get , Update , Delete ==> Book
 router.post('/', upload.single('image') , addBook);
 router.get('/:id', getBookById);
-router.put('/:id', updateBook);
+router.put('/:id',upload.single('image') ,updateBook);
 router.delete('/:id', deleteBook);
 router.get('/', getAllBooksP);
 
