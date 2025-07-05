@@ -4,6 +4,8 @@ const { clearBooksPaginationCache } = require("../utils/cache");
 const asyncHandler = require("express-async-handler");
 const { validateBook } = require("../validation/bookValidation");
 const fs = require("fs");
+const path = require("path");
+
 // Add a new book  POST /api/books
 const addBook = async (req, res) => {
   try {
@@ -113,6 +115,16 @@ const deleteBook = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Book not found");
   }
+
+if (book.image) {
+    const imagePath = path.join(__dirname, '..', 'uploads', path.basename(book.image));
+    fs.unlink(imagePath, (err) => {
+  if (err) {
+    console.error(`Failed to delete image file: ${imagePath}`, err.message);
+  }
+});
+  }
+
 
   await Book.findByIdAndDelete(req.params.id);
   await clearBooksPaginationCache();
