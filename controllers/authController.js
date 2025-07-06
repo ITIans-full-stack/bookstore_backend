@@ -12,8 +12,8 @@ const DeleteRequest = require('../models/DeleteRequest');
 exports.register = async (req, res) => {
   try {
     console.log('📥 Incoming register payload:', req.body);
-    const { name, email, password } = req.body;
-
+    const { name, password } = req.body;
+const email = req.body.email.toLowerCase();
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
@@ -51,7 +51,8 @@ exports.register = async (req, res) => {
 // ========== Login ==========
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = req.body.email.toLowerCase();
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -189,9 +190,8 @@ exports.rejectDeleteRequest = async (req, res) => {
 //=============================resert 
 exports.requestReset = async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'Email not found' });
+  const email = req.body.email.toLowerCase();
+const user = await User.findOne({ email }); if (!user) return res.status(404).json({ message: 'Email not found' });
 
     // Delete existing reset tokens (optional cleanup)
     await Token.deleteMany({ userId: user._id, type: 'reset' });
