@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
+//const { registerSchema } = require('../validators/authValidator');
+
 
 const {
   register,
@@ -19,12 +21,22 @@ const {
 
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
+
+const validate = require('../middleware/validate');
+const { registerSchema, loginSchema, updateProfileSchema } = require('../validators/authValidator');
+
 // ============ Local Auth ============
-router.post('/register', register);
-router.post('/login', login);
+//router.post('/register', register);
+router.post('/register', validate(registerSchema), register)
+
+// router.post('/login', login);
+router.post('/login', validate(loginSchema), login);
+
 router.post('/logout', logout);
 router.get('/profile', authenticateToken, getProfile);
-router.put('/profile', authenticateToken, updateProfile);
+//router.put('/profile', authenticateToken, updateProfile);
+router.put('/profile', authenticateToken, validate(updateProfileSchema), updateProfile);
+
 router.post('/request-delete', authenticateToken, requestAccountDeletion);
 
 // ============ Email Verification ============

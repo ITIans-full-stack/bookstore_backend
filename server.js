@@ -134,6 +134,8 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const errorHandler = require("./middleware/errorHandler");
 const paymentRoutes = require("./routes/payment");
 const stripeWebhook = require("./routes/stripeWebhook");
+const logRequests = require('./middleware/logger');
+
 
 dotenv.config();
 connectDB();
@@ -147,8 +149,14 @@ app.use("/api/webhook", express.raw({ type: "application/json" }), stripeWebhook
 // ====== Middleware ======
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
+app.use(logRequests); // Add this after app.use(express.json())
+
 app.use(passport.initialize());
 require('./config/passport');
+
+
+///
+
 
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
