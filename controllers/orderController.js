@@ -289,13 +289,10 @@ const payOrder = async (req, res) => {
 
     for (let item of order.books) {
       const book = item.book;
-
-      if (book.stock < item.quantity) {
-        throw new Error(`Not enough stock for book: ${book.title}`);
-      }
-
-      book.stock -= item.quantity;
+      
+      book.stock = Math.max(0, book.stock - item.quantity);
       await book.save({ session });
+      console.log(`Updated stock for ${book.title}: ${book.stock}`);
     }
 
     order.isPaid = true;
