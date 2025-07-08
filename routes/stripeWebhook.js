@@ -1,5 +1,3 @@
-console.log("✅ Webhook called from Stripe");
-
 const express = require("express");
 const router = express.Router();
 const Stripe = require("stripe");
@@ -60,18 +58,19 @@ router.post("/", async (req, res) => {
         const book = item.book;
         console.log(`📖 Processing book: ${book.title}, Current stock: ${book.stock}, Requested: ${item.quantity}`);
         
-        if (book.stock < item.quantity) {
-          console.error(`❌ Not enough stock for ${book.title}`);
-          throw new Error(`Stock not enough for ${book.title}`);
+        if (book.stock >= item.quantity) {
+          book.stock -= item.quantity;
+          await book.save({ session: sessionDB });
+          console.log(`✅ Updated stock for ${book.title}: ${book.stock}`);
+        } else {
+          console.warn(`⚠️ Insufficient stock for ${book.title}, but proceeding with order`);
+          book.stock = Math.max(0, book.stock - item.quantity);
+          await book.save({ session: sessionDB });
         }
-        
-        book.stock -= item.quantity;
-        await book.save({ session: sessionDB });
-        console.log(`✅ Updated stock for ${book.title}: ${book.stock}`);
       }
 
-      // تحديث حالة الطلب
       order.isPaid = true;
+      order.status = 'completed'; 
       order.paymentMethod = 'stripe';
       order.paidAt = new Date();
       order.paymentResult = {
@@ -81,16 +80,16 @@ router.post("/", async (req, res) => {
         email_address: session.customer_details?.email || 'N/A'
       };
       await order.save({ session: sessionDB });
-      console.log("✅ Order marked as paid");
+      console.log("✅ Order marked as paid with status:", order.status);
 
-      // حذف السلة
+      // reset the cart
       const deletedCart = await Cart.findOneAndDelete({ user: userId }).session(sessionDB);
       console.log("🛒 Cart deleted:", deletedCart ? "Yes" : "No cart found");
 
       await sessionDB.commitTransaction();
       console.log("✅ Transaction committed successfully");
       
-      res.status(200).json({ received: true });
+      res.status(200).json({ received: true, orderStatus: order.status });
     } catch (error) {
       console.error("❌ Error processing webhook:", error.message);
       await sessionDB.abortTransaction();
