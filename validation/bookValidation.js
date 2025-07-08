@@ -24,6 +24,7 @@ const bookSchema = Joi.object({
   category: Joi.array().items(Joi.string()).min(1).required(),
   stock: Joi.number().min(0).required(),
   image: Joi.string().required(),
+  images: Joi.array().items(Joi.string()).optional(),
   reviews: Joi.array().items(reviewSchema).optional(),
 });
 

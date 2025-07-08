@@ -46,6 +46,10 @@ const bookSchema = new mongoose.Schema(
       type: String, 
       required: [true, 'Book image is required'],
     },
+    images: {
+  type: [String],
+  default: []
+},
      averageRating: {
       type: Number,
       default: 0

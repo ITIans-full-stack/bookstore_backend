@@ -9,37 +9,56 @@ const path = require("path");
 // Add a new book  POST /api/books
 const addBook = async (req, res) => {
   try {
-    // const image = req.file ? req.file.path : null;
-    let image = null;
-    if (req.file) {
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-      image = `${baseUrl}/${req.file.path.replace(/\\/g, "/")}`;
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    let mainImagePath = null;
+    let additionalImagesPaths = [];
+
+    // Get temp paths
+    if (req.files?.image?.[0]) {
+      mainImagePath = req.files.image[0].path;
     }
+
+    if (req.files?.images) {
+      additionalImagesPaths = req.files.images.map(f => f.path);
+    }
+
+    // Build URLs for Joi validation
     const bookData = {
       ...req.body,
-      image,
+      image: mainImagePath ? `${baseUrl}/${mainImagePath.replace(/\\/g, "/")}` : null,
+      images: additionalImagesPaths.map(p => `${baseUrl}/${p.replace(/\\/g, "/")}`),
     };
-    // Joi validation
+
     const { error } = validateBook(bookData);
     if (error) {
-      if (req.file && req.file.path) {
-        fs.unlinkSync(req.file.path);
-      }
-
+      // Delete all temp files
+      if (mainImagePath) fs.unlinkSync(mainImagePath);
+      additionalImagesPaths.forEach(p => fs.unlinkSync(p));
       return res.status(400).json({
         errors: error.details.map((d) => d.message),
       });
     }
-    const book = new Book(bookData);
 
+    const book = new Book(bookData);
     const createdBook = await book.save();
+
     await clearBooksPaginationCache();
 
     res.status(201).json(createdBook);
   } catch (error) {
+    // Clean up temp files on error
+    if (req.files?.image?.[0]?.path) {
+      fs.unlink(req.files.image[0].path, () => {});
+    }
+    if (req.files?.images) {
+      req.files.images.forEach(file => fs.unlink(file.path, () => {}));
+    }
+
     res.status(500).json({ message: error.message });
   }
 };
+
 //================================================================================
 // Get book by ID  GET /api/books/:id
 const getBookById = async (req, res) => {
@@ -58,46 +77,70 @@ const getBookById = async (req, res) => {
 //================================================================================
 // Update book by id   PUT /api/books/:id
 const updateBook = asyncHandler(async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
   const book = await Book.findById(req.params.id);
+
   if (!book) {
     res.status(404);
     throw new Error("Book not found");
   }
 
-  // Handle new image upload
-  let image = book.image;
-  if (req.file) {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    image = `${baseUrl}/${req.file.path.replace(/\\/g, "/")}`;
+  const mainImagePath = req.files?.image?.[0]?.path || null;
+  const newImagePaths = req.files?.images?.map(f => f.path) || [];
 
-    
-    const oldPath = book.image.replace(baseUrl + "/", "");
-    if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+
+  let existingImageUrls = [];
+  if (Array.isArray(req.body['images[]'])) {
+    existingImageUrls = req.body['images[]'];
+  } else if (Array.isArray(req.body.images)) {
+    existingImageUrls = req.body.images;
+  } else if (typeof req.body.images === 'string') {
+    existingImageUrls = [req.body.images];
   }
 
-  const updatedFields = {
+  const allImages = [
+    ...existingImageUrls,
+    ...newImagePaths.map(p => `${baseUrl}/${p.replace(/\\/g, "/")}`)
+  ];
+
+  const updatedImage = mainImagePath
+    ? `${baseUrl}/${mainImagePath.replace(/\\/g, "/")}`
+    : book.image; 
+
+
+  const updatedData = {
     ...req.body,
-    image, 
+    image: updatedImage,
+    images: allImages
   };
 
-  
-  const { error } = validateBook(updatedFields);
+
+  const { error } = validateBook(updatedData);
   if (error) {
-    return res.status(400).json({ errors: error.details.map(d => d.message) });
+    if (mainImagePath) fs.unlinkSync(mainImagePath);
+    newImagePaths.forEach(p => fs.unlinkSync(p));
+    return res.status(400).json({
+      errors: error.details.map(d => d.message),
+    });
   }
+
+  if (mainImagePath && book.image) {
+    const oldMain = path.join(__dirname, '..', 'uploads', path.basename(book.image));
+    if (fs.existsSync(oldMain)) fs.unlinkSync(oldMain);
+  }
+
 
   const updatedBook = await Book.findByIdAndUpdate(
     req.params.id,
-    updatedFields,
-    {
-      new: true,
-      runValidators: true,
-    }
+    updatedData,
+    { new: true, runValidators: true }
   );
+
 
   const bookKey = `book:${req.params.id}`;
   await redisClient.setEx(bookKey, 300, JSON.stringify(updatedBook));
   await clearBooksPaginationCache();
+
 
   res.status(200).json({
     success: true,
@@ -105,6 +148,8 @@ const updateBook = asyncHandler(async (req, res) => {
     data: updatedBook,
   });
 });
+
+
 
 
 //================================================================================
