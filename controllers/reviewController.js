@@ -82,14 +82,19 @@ const getReviewsForBook = asyncHandler(async (req, res) => {
   );
   res.json(reviews);
 });
+
 const canUserReview = asyncHandler(async (req, res) => {
   const { bookId } = req.params;
+  console.log("BOOK ID:", bookId);
+  console.log("USER ID:", req.user.id);
 
   const order = await Order.findOne({
     user: req.user.id,
-    "books.book": bookId,
-    status: "delivered"
+    "books.book": new mongoose.Types.ObjectId(bookId),
+    isPaid: true
   });
+
+  console.log("ORDER:", order);
 
   if (order) {
     return res.json({ canReview: true });
@@ -97,6 +102,7 @@ const canUserReview = asyncHandler(async (req, res) => {
     return res.status(403).json({ canReview: false });
   }
 });
+
 
 
 module.exports = {
