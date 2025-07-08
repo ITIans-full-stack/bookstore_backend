@@ -185,7 +185,7 @@ const getRelatedBooks = asyncHandler(async (req, res) => {
 
     const relatedBooks = await Book.find({
       _id: { $ne: book._id },
-      category: book.category
+      category: { $in: book.category }
     }).limit(6);
 
     res.json(relatedBooks);
@@ -194,6 +194,88 @@ const getRelatedBooks = asyncHandler(async (req, res) => {
   }
 });
 
+//================================================================================
+// Get all unique categories from books   GET /api/books/categories
+const getAllCategories = asyncHandler(async (req, res) => {
+  try {
+    const categories = await Book.aggregate([
+      { $unwind: "$category" },
+      { $group: { _id: "$category" } },
+      { $sort: { _id: 1 } }
+    ]);
+
+    const categoryList = categories.map(cat => cat._id); 
+
+    res.status(200).json({
+      success: true,
+      message: "Categories fetched successfully",
+      data: categoryList,
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ message: "Failed to fetch categories" });
+  }
+});
+// GET /api/books/top-sales
+const getTopSalesBooks = asyncHandler(async (req, res) => {
+  const books = await Book.find().sort({ discount: -1 }).limit(7);
+  res.status(200).json({
+    success: true,
+    message: 'Top sales books fetched successfully',
+    data: books,
+  });
+});
+// GET /api/books/top-rated
+const getTopRatedBooks = asyncHandler(async (req, res) => {
+  const books = await Book.find().sort({ averageRating: -1 }).limit(4);
+  res.status(200).json({
+    success: true,
+    message: 'Top rated books fetched successfully',
+    data: books,
+  });
+});
+// GET /api/books/newest
+const getNewestBooks = asyncHandler(async (req, res) => {
+  const books = await Book.find().sort({ createdAt: -1 }).limit(5);
+  res.status(200).json({
+    success: true,
+    message: 'Newest books fetched successfully',
+    data: books,
+  });
+});
+
+// GET /api/books/authors
+const getAllAuthors = asyncHandler(async (req, res) => {
+  try {
+    const authors = await Book.distinct('author');
+
+    // Normalize and de-duplicate case-insensitive authors
+    const authorMap = new Map();
+    authors.forEach(author => {
+      if (author && typeof author === 'string') {
+        const formatted = author.trim(); // Or apply your own formatCategoryName()
+        const key = formatted.toLowerCase();
+        if (!authorMap.has(key)) {
+          authorMap.set(key, formatted);
+        }
+      }
+    });
+
+    const uniqueAuthors = Array.from(authorMap.values());
+
+    res.status(200).json({
+      success: true,
+      message: 'Authors fetched successfully',
+      data: uniqueAuthors,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch authors' });
+  }
+});
+
+
+
+
 
 module.exports = {
   addBook,
@@ -201,5 +283,10 @@ module.exports = {
   updateBook,
   deleteBook,
   getAllBooksP,
-  getRelatedBooks
+  getRelatedBooks,
+  getAllCategories,
+  getTopSalesBooks,
+  getTopRatedBooks,
+  getNewestBooks,
+  getAllAuthors
 };

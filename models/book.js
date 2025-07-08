@@ -1,29 +1,5 @@
 const mongoose = require('mongoose');
 
-const reviewSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    rating: {
-      type: Number,
-      min: 1,
-      max: 5,
-      required: true,
-    },
-    review: {
-      type: String,
-      maxlength: 500,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  { _id: false }
-);
 
 const bookSchema = new mongoose.Schema(
   {
@@ -48,9 +24,15 @@ const bookSchema = new mongoose.Schema(
       max:[70,'Discount cant be more than 70 ']
     },
     category: {
-      type: String,
-      required: [true, 'Book category is required'],
+  type: [String], 
+  required: [true, 'At least one category is required'],
+  validate: {
+    validator: function (value) {
+      return value.length > 0;
     },
+    message: 'At least one category must be provided'
+  }
+},
     description: {
       type: String,
       required: [true, 'Book description is required'],
