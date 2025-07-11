@@ -13,6 +13,7 @@ const addBook = async (req, res) => {
 
     let mainImagePath = null;
     let additionalImagesPaths = [];
+    let pdfPath = null;
 
     // Get temp paths
     if (req.files?.image?.[0]) {
@@ -23,11 +24,16 @@ const addBook = async (req, res) => {
       additionalImagesPaths = req.files.images.map(f => f.path);
     }
 
+      if (req.files?.pdf?.[0]) {
+      pdfPath = req.files.pdf[0].path;
+    }
+
     // Build URLs for Joi validation
     const bookData = {
       ...req.body,
       image: mainImagePath ? `${baseUrl}/${mainImagePath.replace(/\\/g, "/")}` : null,
       images: additionalImagesPaths.map(p => `${baseUrl}/${p.replace(/\\/g, "/")}`),
+      pdf: pdfPath ? `${baseUrl}/${pdfPath.replace(/\\/g, "/")}` : null,
     };
 
     const { error } = validateBook(bookData);
@@ -35,6 +41,7 @@ const addBook = async (req, res) => {
       // Delete all temp files
       if (mainImagePath) fs.unlinkSync(mainImagePath);
       additionalImagesPaths.forEach(p => fs.unlinkSync(p));
+      if (pdfPath) fs.unlinkSync(pdfPath);
       return res.status(400).json({
         errors: error.details.map((d) => d.message),
       });
@@ -53,6 +60,9 @@ const addBook = async (req, res) => {
     }
     if (req.files?.images) {
       req.files.images.forEach(file => fs.unlink(file.path, () => {}));
+    }
+      if (req.files?.pdf?.[0]?.path) {
+      fs.unlink(req.files.pdf[0].path, () => {});
     }
 
     res.status(500).json({ message: error.message });
@@ -87,6 +97,7 @@ const updateBook = asyncHandler(async (req, res) => {
 
   const mainImagePath = req.files?.image?.[0]?.path || null;
   const newImagePaths = req.files?.images?.map(f => f.path) || [];
+  const pdfPath = req.files?.pdf?.[0]?.path || null;
 
 
   let existingImageUrls = [];
@@ -107,12 +118,38 @@ const updateBook = asyncHandler(async (req, res) => {
     ? `${baseUrl}/${mainImagePath.replace(/\\/g, "/")}`
     : book.image; 
 
+    //  const updatedPdf = pdfPath
+    // ? `${baseUrl}/${pdfPath.replace(/\\/g, "/")}`
+    // : book.pdf;
+
+    let updatedPdf = book.pdf;
+
+// Handle explicit PDF removal
+if (req.body.removePdf === 'true' && book.pdf) {
+  const oldPdf = path.join(__dirname, '..', 'uploads', path.basename(book.pdf));
+  if (fs.existsSync(oldPdf)) fs.unlinkSync(oldPdf);
+  updatedPdf = null;
+}
+
+// Handle replacing PDF
+if (pdfPath) {
+  // If replacing, delete the old one
+  if (book.pdf) {
+    const oldPdf = path.join(__dirname, '..', 'uploads', path.basename(book.pdf));
+    if (fs.existsSync(oldPdf)) fs.unlinkSync(oldPdf);
+  }
+
+  updatedPdf = `${baseUrl}/${pdfPath.replace(/\\/g, "/")}`;
+}
+
 
   const updatedData = {
     ...req.body,
     image: updatedImage,
-    images: allImages
+    images: allImages,
+    pdf: updatedPdf
   };
+  
 
 
   const { error } = validateBook(updatedData);
@@ -127,6 +164,12 @@ const updateBook = asyncHandler(async (req, res) => {
   if (mainImagePath && book.image) {
     const oldMain = path.join(__dirname, '..', 'uploads', path.basename(book.image));
     if (fs.existsSync(oldMain)) fs.unlinkSync(oldMain);
+  }
+
+   // Delete old PDF if replaced
+  if (pdfPath && book.pdf) {
+    const oldPdf = path.join(__dirname, '..', 'uploads', path.basename(book.pdf));
+    if (fs.existsSync(oldPdf)) fs.unlinkSync(oldPdf);
   }
 
 

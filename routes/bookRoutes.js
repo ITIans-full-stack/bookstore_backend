@@ -18,7 +18,8 @@ const {
 // Add , Get , Update , Delete ==> Book
 router.post('/', upload.fields([
   { name: 'image', maxCount: 1 },
-  { name: 'images', maxCount: 5 }
+  { name: 'images', maxCount: 5 },
+  { name: "pdf", maxCount: 1 }
 ]), addBook);
 router.get("/categories", getAllCategories);
 router.get('/authors', getAllAuthors);
@@ -29,7 +30,8 @@ router.get('/:id/related', getRelatedBooks);
 router.get('/:id', getBookById);
 router.put('/:id',upload.fields([
   { name: 'image', maxCount: 1 },
-  { name: 'images', maxCount: 5 }
+  { name: 'images', maxCount: 5 },
+  { name: "pdf", maxCount: 1 }
 ]),updateBook);
 router.delete('/:id', deleteBook);
 router.get('/', getAllBooksP);

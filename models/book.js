@@ -50,6 +50,8 @@ const bookSchema = new mongoose.Schema(
   type: [String],
   default: []
 },
+pdf: { type: String },
+
      averageRating: {
       type: Number,
       default: 0

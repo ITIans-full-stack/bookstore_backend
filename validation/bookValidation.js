@@ -26,6 +26,9 @@ const bookSchema = Joi.object({
   image: Joi.string().required(),
   images: Joi.array().items(Joi.string()).optional(),
   reviews: Joi.array().items(reviewSchema).optional(),
+  pdf: Joi.string().allow(null).optional(),
+  removePdf: Joi.string().valid('true', 'false').optional(),
+
 });
 
 module.exports = {
