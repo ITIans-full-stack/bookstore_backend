@@ -433,15 +433,20 @@ const createOrderFromCart = async (req, res) => {
           .map((b) => `<li>${b.quantity} x ${b.title}</li>`)
           .join("");
 
-        const emailText = `Your order has been created!\n\nOrder ID: ${newOrder._id}\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}\nStatus: ${newOrder.status}`;
-        const emailHTML = `
-          <h2>Your order has been created!</h2>
-          <p><strong>Order ID:</strong> ${newOrder._id}</p>
-          <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
-          <p><strong>Books:</strong></p>
-          <ul>${bookListHTML}</ul>
-          <p><strong>Status:</strong> ${newOrder.status}</p>
-        `;
+        const emailText = `Thank you for your order!\n\nOrder ID: ${
+        newOrder._id
+      }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}\nStatus: ${
+        newOrder.status
+      }`;
+
+      const emailHTML = `
+        <h2>Thank you for your order!</h2>
+        <p><strong>Order ID:</strong> ${newOrder._id}</p>
+        <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
+        <p><strong>Books:</strong></p>
+        <ul>${bookListHTML}</ul>
+        <p><strong>Status:</strong> ${newOrder.status}</p>
+      `;
 
         console.log("📧 Preparing to send initial order email to:", user.email);
         await sendEmail(user.email, "Order Created", emailText, emailHTML);
@@ -515,7 +520,13 @@ const createOrder = async (req, res) => {
         .map((b) => `<li>${b.quantity} x ${b.title}</li>`)
         .join("");
 
-      const emailText = `Thank you for your order!\n\nOrder ID: ${newOrder._id}\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}\nStatus: ${newOrder.status}`;
+     const emailText = `Thank you for your order!\n\nOrder ID: ${
+        newOrder._id
+      }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}\nStatus: ${
+        newOrder.status
+      }`;
+    
+
       const emailHTML = `
         <h2>Thank you for your order!</h2>
         <p><strong>Order ID:</strong> ${newOrder._id}</p>
