@@ -706,7 +706,7 @@ const cancelOrder = async (req, res) => {
     if (order.isPaid) {
       throw new Error("Cannot cancel a paid order");
     }
-
+    // Restore stock
     for (let item of order.books) {
       const book = await Book.findById(item.book).session(session);
       if (book) {
@@ -714,10 +714,10 @@ const cancelOrder = async (req, res) => {
         await book.save({ session });
       }
     }
-
+    // Just update status
     order.status = 'cancelled';
     await order.save({ session });
-    await Order.findByIdAndDelete(orderId).session(session);
+    // await Order.findByIdAndDelete(orderId).session(session);
 
     await session.commitTransaction();
     await session.endSession();

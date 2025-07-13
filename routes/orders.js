@@ -56,6 +56,6 @@ router.put('/:id/pay', authenticateToken, updateOrderToPaid);
 router.post('/pay/:id', authenticateToken, payOrder);
 
 // cancel order
-router.delete('/:id', authenticateToken, cancelOrder);
+router.patch('/:id/cancel', authenticateToken, cancelOrder);
 
 module.exports = router;
