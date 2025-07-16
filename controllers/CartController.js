@@ -5,7 +5,7 @@ const Book = require('../models/book');
 const getCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id }).populate('items.book', 'title price image stock');
-    console.log('Fetched cart:', cart); // Logging for debugging
+    // console.log('Fetched cart:', cart);  Logging for debugging
     if (!cart) return res.json({ items: [] });
     res.json(cart);
   } catch (err) {

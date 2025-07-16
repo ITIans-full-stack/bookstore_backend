@@ -12,7 +12,8 @@ const {
   getTopSalesBooks,
   getTopRatedBooks,
   getNewestBooks,
-  getAllAuthors
+  getAllAuthors,
+  searchBooksByType
 } = require('../controllers/bookController');
 
 // Add , Get , Update , Delete ==> Book
@@ -23,6 +24,7 @@ router.post('/', upload.fields([
 ]), addBook);
 router.get("/categories", getAllCategories);
 router.get('/authors', getAllAuthors);
+router.get("/search", searchBooksByType);
 router.get('/top-sales', getTopSalesBooks);
 router.get('/top-rated', getTopRatedBooks);
 router.get('/newest', getNewestBooks); 

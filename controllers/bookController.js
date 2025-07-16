@@ -361,6 +361,64 @@ const getAllAuthors = asyncHandler(async (req, res) => {
   }
 });
 
+//=============================================================================
+// GET /api/books/search?type=title&keyword=magic
+
+const searchBooksByType = asyncHandler(async (req, res) => {
+  const { type, keyword } = req.query;
+
+  if (!type || !keyword) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing 'type' or 'keyword' query parameters",
+    });
+  }
+
+  const allowedTypes = ["title", "author", "category"];
+  if (!allowedTypes.includes(type)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid search type. Allowed types: ${allowedTypes.join(", ")}`,
+    });
+  }
+
+  const trimmedKeyword = keyword.trim();
+  let filter = {};
+
+  if (type === "category") {
+    // category is an array, so use $elemMatch
+    filter = {
+      category: {
+        $elemMatch: { $regex: trimmedKeyword, $options: "i" }
+      }
+    };
+  } else {
+    filter = {
+      [type]: { $regex: trimmedKeyword, $options: "i" }
+    };
+  }
+
+  try {
+    const books = await Book.find(filter);
+
+    res.status(200).json({
+      success: true,
+      message: `Books found for ${type} matching "${trimmedKeyword}"`,
+      results: books.length,
+      data: {
+        books: books, // This is the array, but wrapped inside "data"
+      },
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+
 
 
 
@@ -376,5 +434,6 @@ module.exports = {
   getTopSalesBooks,
   getTopRatedBooks,
   getNewestBooks,
-  getAllAuthors
+  getAllAuthors,
+  searchBooksByType
 };
