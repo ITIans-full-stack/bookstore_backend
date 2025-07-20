@@ -30,7 +30,8 @@ const {
   getMyOrders,
   payOrder,
   cancelOrder,
-  getAllOrders 
+  getAllOrders ,
+  createOrderForSingleItem
 } = require('../controllers/orderController');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -39,8 +40,7 @@ router.post('/',authenticateToken, createOrder);
 
 // greate an order from the cart
 router.post('/cart', authenticateToken, createOrderFromCart);
-
-// get user orders
+router.post('/single-item', authenticateToken, createOrderForSingleItem); 
 router.get('/myorders', authenticateToken, getMyOrders);
 
 // get all requests (for admin)

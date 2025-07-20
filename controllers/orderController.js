@@ -665,25 +665,33 @@ const payOrder = async (req, res) => {
 
     for (let item of order.books) {
       const book = item.book;
-      
       book.stock = Math.max(0, book.stock - item.quantity);
       await book.save({ session });
       console.log(`Updated stock for ${book.title}: ${book.stock}`);
     }
 
+    const cart = await Cart.findOne({ user: userId }).session(session);
+    if (cart) {
+      cart.items = cart.items.filter(
+        (cartItem) =>
+          !order.books.some((orderItem) =>
+            orderItem.book._id.equals(cartItem.book)
+          )
+      );
+      await cart.save({ session });
+    }
+
     order.isPaid = true;
-    order.status = 'completed';
+    order.status = "completed";
     order.paidAt = Date.now();
     await order.save({ session });
-
-    await Cart.findOneAndDelete({ user: userId }).session(session);
 
     await session.commitTransaction();
     await session.endSession();
 
     res
       .status(200)
-      .json({ message: "Payment confirmed, cart cleared, and stock updated", order });
+      .json({ message: "Payment confirmed, cart updated, and stock updated", order });
   } catch (error) {
     await session.abortTransaction();
     await session.endSession();
@@ -771,6 +779,85 @@ const getMyOrders = async (req, res) => {
   }
 };
 
+const createOrderForSingleItem = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { bookId, quantity } = req.body;
+    const userId = req.user.id;
+
+    const book = await Book.findById(bookId).session(session);
+    if (!book) {
+      throw new Error('Book not found');
+    }
+
+    if (book.stock < quantity) {
+      throw new Error(`Not enough stock for book: ${book.title}`);
+    }
+
+    const totalPrice = book.price * quantity;
+
+    const newOrder = new Order({
+      user: userId,
+      books: [{ book: bookId, quantity }],
+      totalPrice,
+      isPaid: false,
+      status: 'pending',
+    });
+
+    await newOrder.save({ session });
+
+    try {
+      const user = await User.findById(userId).session(session);
+      if (!user || !user.email) {
+        console.error('❌ User not found or no email for userId:', userId);
+      } else {
+        const bookListText = `- ${quantity} x ${book.title}`;
+        const bookListHTML = `<li>${quantity} x ${book.title}</li>`;
+
+        const emailText = `Thank you for your order!\n\nOrder ID: ${
+          newOrder._id
+        }\nTotal: $${totalPrice.toFixed(2)}\nBooks:\n${bookListText}\nStatus: ${
+          newOrder.status
+        }`;
+
+        const emailHTML = `
+          <h2>Thank you for your order!</h2>
+          <p><strong>Order ID:</strong> ${newOrder._id}</p>
+          <p><strong>Total:</strong> $${totalPrice.toFixed(2)}</p>
+          <p><strong>Books:</strong></p>
+          <ul>${bookListHTML}</ul>
+          <p><strong>Status:</strong> ${newOrder.status}</p>
+        `;
+
+        console.log('📧 Preparing to send initial order email to:', user.email);
+        await sendEmail(user.email, 'Order Created', emailText, emailHTML);
+        console.log('✅ Initial order email sent successfully to:', user.email);
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send initial order email:', {
+        error: emailError.message,
+        stack: emailError.stack,
+        userId,
+      });
+    }
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    res
+      .status(201)
+      .json({ message: 'Order created for single item', order: newOrder });
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    console.error('❌ Error creating order for single item:', error.message);
+    res.status(400).json({ message: error.message });
+  }
+
+};
+
 module.exports = {
   createOrder,
   createOrderFromCart,
@@ -781,4 +868,5 @@ module.exports = {
   payOrder,
   cancelOrder,
   getAllOrders,
+  createOrderForSingleItem,
 };
