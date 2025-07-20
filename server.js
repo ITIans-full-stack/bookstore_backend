@@ -163,7 +163,7 @@ app.use(
 
 
 // ====== Middleware ======
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(logRequests); // Add this after app.use(express.json())
 
