@@ -1,7 +1,7 @@
 const Cart = require('../models/cart');
 const Book = require('../models/book');
 
-// 1. Get cart
+// get cart
 const getCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id }).populate('items.book', 'title price image stock');
@@ -14,7 +14,7 @@ const getCart = async (req, res) => {
   }
 };
 
-// 2. Add to cart
+// add to cart
 const addToCart = async (req, res) => {
   try {
     const items = Array.isArray(req.body) ? req.body : [req.body];
@@ -80,7 +80,7 @@ const addToCart = async (req, res) => {
   }
 };
 
-// 3. Remove specific book from cart
+// remove specific book from cart
 const removeFromCart = async (req, res) => {
   try {
     const bookId = req.params.bookId;
@@ -102,7 +102,7 @@ const removeFromCart = async (req, res) => {
   }
 };
 
-// 4. Clear entire cart
+//  Clear entire cart
 const clearCart = async (req, res) => {
   try {
     await Cart.findOneAndDelete({ user: req.user.id });
