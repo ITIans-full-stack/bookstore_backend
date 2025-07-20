@@ -122,6 +122,9 @@ const paymentRoutes = require("./routes/payment");
 const stripeWebhook = require("./routes/stripeWebhook");
 const logRequests = require("./middleware/logger");
 const wishlistRoutes = require("./routes/wishlist");
+const swaggerJsdoc = require("swagger-jsdoc")
+const swaggerUi = require("swagger-ui-express");
+
 
 dotenv.config();
 connectDB();
@@ -153,6 +156,7 @@ app.get("/test-review", (req, res) => {
   res.send("Review Test Route Works!");
 });
 
+
 // Routes
 app.use("/api/payment", paymentRoutes);
 app.use("/api/books", bookRoutes);
@@ -181,8 +185,37 @@ io.on("connection", (socket) => {
     console.log("Socket disconnected:", socket.id);
   });
 });
-
 app.set("io", io);
+
+
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Aura Book API",
+      version: "0.1.0",
+      description:
+        "This is a simple Book API application made with Express and documented with Swagger",
+    },
+    servers: [
+      {
+        url: "http://localhost:5000/",
+      },
+    ],
+  },
+  apis: ["./routes/*.js"],
+};
+
+const specs = swaggerJsdoc(options);
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(specs)
+);
+
+
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
