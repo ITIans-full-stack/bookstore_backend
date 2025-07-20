@@ -132,12 +132,18 @@ connectDB();
 // ====== INIT APP FIRST ======
 const app = express();
 
+app.use(cors({
+  origin: 'https://bookstores-fawn.vercel.app/landing',
+  credentials: true
+}));
+
 //  Very important: webhook must come before express.json()
 app.use(
   "/api/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhook
 );
+
 
 // ====== Middleware ======
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
@@ -216,10 +222,7 @@ app.use(
 
 
 
-app.use(cors({
-  origin: 'https://bookstores-fawn.vercel.app/landing',
-  credentials: true
-}));
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
