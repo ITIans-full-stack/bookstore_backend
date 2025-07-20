@@ -62,6 +62,12 @@ pdf: { type: String },
   }
 );
 
+bookSchema.index({ title: 1 });
+bookSchema.index({ author: 1 });
+bookSchema.index({ category: 1 });
+
+
+
 const Book = mongoose.model('Book', bookSchema);
 
 module.exports = Book;
