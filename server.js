@@ -132,10 +132,27 @@ connectDB();
 // ====== INIT APP FIRST ======
 const app = express();
 
+// app.use(cors({
+//   origin: 'https://bookstores-fawn.vercel.app/landing',
+//   credentials: true
+// }));
+
+const allowedOrigins = [
+  'https://bookstores-fawn.vercel.app',
+  'https://bookstores-qc8wxsrma-abdallahbahaas-projects.vercel.app'
+];
+
 app.use(cors({
-  origin: 'https://bookstores-fawn.vercel.app/landing',
-  credentials: true
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
 }));
+
 
 //  Very important: webhook must come before express.json()
 app.use(
