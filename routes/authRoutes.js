@@ -102,4 +102,17 @@ router.get('/delete-requests', authenticateToken, authorizeRoles('admin'), getAl
 router.post('/delete-requests/:id/approve', authenticateToken, authorizeRoles('admin'), approveDeleteRequest);
 router.delete('/delete-requests/:id/reject', authenticateToken, authorizeRoles('admin'), rejectDeleteRequest);
 
+
+// ========== Admin: Get All Users ========================
+router.get('/', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const users = await User.find().select('name email role isVerified createdAt updatedAt');
+    res.json(users);
+  } catch (err) {
+    console.error('❌ Failed to fetch users:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 module.exports = router;
