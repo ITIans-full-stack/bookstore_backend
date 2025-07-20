@@ -216,6 +216,10 @@ app.use(
 
 
 
+app.use(cors({
+  origin: 'https://bookstores-fawn.vercel.app/landing',
+  credentials: true
+}));
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
