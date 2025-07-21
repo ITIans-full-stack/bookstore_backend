@@ -139,6 +139,7 @@ const app = express();
 
 const allowedOrigins = [
   'https://bookstores-fawn.vercel.app',
+  'http://localhost:4200',
   'https://bookstores-qc8wxsrma-abdallahbahaas-projects.vercel.app'
 ];
 
