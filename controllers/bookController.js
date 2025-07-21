@@ -9,7 +9,7 @@ const path = require("path");
 // Add a new book  POST /api/books
 const addBook = async (req, res) => {
   try {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const baseUrl = `https://zealous-imagination-production.up.railway.app`;
 
     let mainImagePath = null;
     let additionalImagesPaths = [];
@@ -87,7 +87,7 @@ const getBookById = async (req, res) => {
 //================================================================================
 // Update book by id   PUT /api/books/:id
 const updateBook = asyncHandler(async (req, res) => {
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const baseUrl = `https://zealous-imagination-production.up.railway.app`;
   const book = await Book.findById(req.params.id);
 
   if (!book) {
