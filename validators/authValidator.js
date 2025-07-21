@@ -76,9 +76,11 @@ exports.loginSchema = Joi.object({
 exports.updateProfileSchema = Joi.object({
   name: Joi.string().min(3),
   email: Joi.string().email(),
-  password: Joi.string()
-    .pattern(new RegExp('^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[!@#$%^&])[A-Za-z\d!@#$%^&]{8,}$'))
-    .messages({
-      'string.pattern.base': 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character'
-    })
+ password: Joi.string()
+  .allow('') // makes it optional
+  .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&])[A-Za-z\\d!@#$%^&]{8,}$'))
+  .messages({
+    'string.pattern.base': 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character'
+  })
+
 });
