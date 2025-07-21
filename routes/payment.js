@@ -135,8 +135,8 @@ router.post('/create-checkout-session', async (req, res) => {
         },
         quantity: item.quantity,
       })),
-      success_url: `http://localhost:4200/payment-result?status=success&orderId=${orderId}`,
-      cancel_url: `http://localhost:4200/payment-result?status=cancel&orderId=${orderId}`,
+      success_url: `https://bookstores-fawn.vercel.app/payment-result?status=success&orderId=${orderId}`,
+      cancel_url: `https://bookstores-fawn.vercel.app/payment-result?status=cancel&orderId=${orderId}`,
       metadata: { 
         orderId: orderId.toString(), 
         userId: userId.toString() 
